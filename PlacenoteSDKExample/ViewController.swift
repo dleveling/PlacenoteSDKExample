@@ -11,10 +11,11 @@ import CoreLocation
 import SceneKit
 import ARKit
 import PlacenoteSDK
+import CoreMotion
 
 class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, UITableViewDelegate, UITableViewDataSource, PNDelegate, CLLocationManagerDelegate {
 
-
+    let motionManager = CMMotionManager()
   //UI Elements
   @IBOutlet var scnView: ARSCNView!
 
@@ -58,10 +59,13 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, UI
   //Setup view once loaded
   override func viewDidLoad() {
     super.viewDidLoad()
+    
+    motionManager.startAccelerometerUpdates()
+    
     setupView()
     setupScene()
     placeIDLabel.text = placeIDDD
-
+    
     //App Related initializations
     shapeManager = ShapeManager(scene: scnScene, view: scnView)
     tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(handleTap))
@@ -147,12 +151,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, UI
     super.viewDidLayoutSubviews()
     scnView.frame = view.bounds
     
-    if (self.lastLocation != nil) {
-        xPosition.text = "\(self.lastLocation!.coordinate.latitude)"
-        yPosition.text = "\(self.lastLocation!.coordinate.longitude)"
-        zPosition.text = "\(self.lastLocation!.altitude)"
-    }
-  }
+      }
 
 
   // MARK: - PNDelegate functions
@@ -465,7 +464,20 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, UI
     let node = SCNNode()
     return node
   }
+    
+  func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
+      
 
+        DispatchQueue.main.async {
+            
+   
+            let acceleration = self.motionManager.accelerometerData?.acceleration
+            
+            self.xPosition.text = "\(acceleration?.x ?? 0)"
+            self.yPosition.text = "\(acceleration?.y ?? 0)"
+            self.zPosition.text = "\(acceleration?.z ?? 0)"
+        }
+    }
   // MARK: - ARSessionDelegate
 
   //Provides a newly captured camera image and accompanying AR information to the delegate.
@@ -509,4 +521,5 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, UI
   func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
     lastLocation = locations.last
   }
+
 }
